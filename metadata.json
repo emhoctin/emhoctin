@@ -1,0 +1,5 @@
+{
+  "name": "Hành Trình Kiến Tạo Mạng",
+  "description": "Một trò chơi web theo chủ đề cyberpunk giúp học sinh THPT ôn tập kiến thức môn Tin học thông qua các thử thách trắc nghiệm được game hóa. Người chơi vào vai một Kiến Trúc Sư Mạng, sửa chữa các Vùng Dữ Liệu bị virus tấn công bằng cách trả lời câu hỏi, kiếm phần thưởng và nâng cấp.",
+  "requestFramePermissions": []
+}
