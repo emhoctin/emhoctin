@@ -11,7 +11,7 @@ interface QuizViewProps {
 const QuizView: React.FC<QuizViewProps> = ({ challenge, onComplete, onBack }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedMcqAnswer, setSelectedMcqAnswer] = useState<number | null>(null);
-  const [tfAnswers, setTfAnswers] = useState<{ [key: number]: boolean }>({});
+  const [tfAnswers, setTfAnswers] = useState<{ [key: number]: boolean | undefined }>({});
   
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [isCurrentAnswerCorrect, setIsCurrentAnswerCorrect] = useState(false);
@@ -21,11 +21,21 @@ const QuizView: React.FC<QuizViewProps> = ({ challenge, onComplete, onBack }) =>
   
   const currentQuestion = challenge.questions[currentQuestionIndex];
   
+  // Effect to reset answers when the question changes
   useEffect(() => {
-    // Reset answers when question changes
+    const question = challenge.questions[currentQuestionIndex];
+    if (question.type === 'true-false') {
+        const initialAnswers: { [key: number]: undefined } = {};
+        question.statements.forEach((_, index) => {
+            initialAnswers[index] = undefined;
+        });
+        setTfAnswers(initialAnswers);
+    } else {
+        setTfAnswers({});
+    }
     setSelectedMcqAnswer(null);
-    setTfAnswers({});
-  }, [currentQuestion]);
+}, [currentQuestionIndex, challenge.questions]);
+
 
   const handleMcqSelect = (optionIndex: number) => {
     setSelectedMcqAnswer(optionIndex);
@@ -61,13 +71,25 @@ const QuizView: React.FC<QuizViewProps> = ({ challenge, onComplete, onBack }) =>
   
   const handleNextQuestion = () => {
     setIsFeedbackModalOpen(false);
-    const isLastQuestion = currentQuestionIndex === challenge.questions.length - 1;
+    
+    // Use a short timeout to allow the modal to fade out before content changes
+    setTimeout(() => {
+        const isLastQuestion = currentQuestionIndex === challenge.questions.length - 1;
 
-    if (isLastQuestion) {
-      onComplete(totalXp, totalCodeBlocks);
-    } else {
-      setCurrentQuestionIndex(prev => prev + 1);
-    }
+        if (isLastQuestion) {
+          // Pass the final calculated XP and CodeBlocks
+          let finalXp = totalXp;
+          let finalCodeBlocks = totalCodeBlocks;
+          // Add the last question's reward if it was correct
+          if (isCurrentAnswerCorrect) {
+              finalXp += currentQuestion.xp;
+              finalCodeBlocks += Math.round(currentQuestion.xp / 2);
+          }
+          onComplete(finalXp, finalCodeBlocks);
+        } else {
+          setCurrentQuestionIndex(prev => prev + 1);
+        }
+    }, 200);
   };
 
   const renderMultipleChoiceQuestion = (question: MultipleChoiceQuestion) => (
@@ -99,8 +121,8 @@ const QuizView: React.FC<QuizViewProps> = ({ challenge, onComplete, onBack }) =>
       <ul className="mt-6 space-y-4">
         {question.statements.map((statement, index) => (
           <li key={index} className="p-4 bg-gray-800 rounded-md border border-gray-700 flex justify-between items-center">
-            <p className="flex-grow text-gray-300">{statement}</p>
-            <div className="flex space-x-2 ml-4">
+            <p className="flex-grow text-gray-300 mr-4">{String.fromCharCode(65 + index)}. {statement}</p>
+            <div className="flex space-x-2 ml-4 flex-shrink-0">
               <button onClick={() => handleTfSelect(index, true)} className={`px-4 py-2 rounded font-bold transition-colors ${tfAnswers[index] === true ? 'bg-green-500 text-white' : 'bg-gray-700 text-gray-300 hover:bg-green-700'}`}>Đ</button>
               <button onClick={() => handleTfSelect(index, false)} className={`px-4 py-2 rounded font-bold transition-colors ${tfAnswers[index] === false ? 'bg-red-500 text-white' : 'bg-gray-700 text-gray-300 hover:bg-red-700'}`}>S</button>
             </div>
@@ -114,9 +136,9 @@ const QuizView: React.FC<QuizViewProps> = ({ challenge, onComplete, onBack }) =>
     if (!currentQuestion) return null;
     switch (currentQuestion.type) {
       case 'multiple-choice':
-        return renderMultipleChoiceQuestion(currentQuestion);
+        return renderMultipleChoiceQuestion(currentQuestion as MultipleChoiceQuestion);
       case 'true-false':
-        return renderTrueFalseQuestion(currentQuestion);
+        return renderTrueFalseQuestion(currentQuestion as TrueFalseQuestion);
       default:
         return null;
     }
@@ -128,7 +150,7 @@ const QuizView: React.FC<QuizViewProps> = ({ challenge, onComplete, onBack }) =>
       return selectedMcqAnswer === null;
     }
     if (currentQuestion.type === 'true-false') {
-      return Object.keys(tfAnswers).length !== currentQuestion.statements.length;
+      return Object.values(tfAnswers).some(answer => answer === undefined);
     }
     return true;
   };

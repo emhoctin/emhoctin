@@ -61,6 +61,7 @@ const MainMenu: React.FC<MainMenuProps> = ({
               <ul className="space-y-3">
                 {zone.gates.map(gate => {
                   const isCompleted = completedChallenges.includes(gate.id);
+                  const isBoss = gate.type === 'boss';
                   const challenge: Challenge = {
                     zoneId: zone.id,
                     gateId: gate.id,
@@ -73,11 +74,11 @@ const MainMenu: React.FC<MainMenuProps> = ({
                       <button
                         onClick={() => onStartChallenge(challenge)}
                         disabled={isCompleted}
-                        className="w-full flex items-center p-4 bg-gray-900/70 rounded-md hover:bg-gray-700/90 transition-colors disabled:bg-gray-900/50 disabled:cursor-not-allowed group"
+                        className={`w-full flex items-center p-4 bg-gray-900/70 rounded-md hover:bg-gray-700/90 transition-colors disabled:bg-gray-900/50 disabled:cursor-not-allowed group ${isBoss && !isCompleted ? 'border-2 border-purple-500/70 shadow-lg shadow-purple-600/20' : ''}`}
                       >
                         {getGateIcon(gate.type, isCompleted)}
                         <span className={`flex-grow text-left font-medium ${isCompleted ? 'text-gray-500 line-through' : 'text-white group-hover:text-cyan-300'}`}>{gate.name}</span>
-                        <span className={`px-3 py-1 text-xs font-bold rounded-full ml-4 opacity-80 ${isCompleted ? 'bg-gray-700 text-gray-400' : `bg-cyan-800 text-cyan-200`}`}>
+                        <span className={`px-3 py-1 text-xs font-bold rounded-full ml-4 opacity-80 ${isCompleted ? 'bg-gray-700 text-gray-400' : isBoss ? 'bg-purple-800 text-purple-200' : `bg-cyan-800 text-cyan-200`}`}>
                           {gate.type.toUpperCase()}
                         </span>
                       </button>

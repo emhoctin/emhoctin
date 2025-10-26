@@ -37,11 +37,20 @@ const App: React.FC = () => {
   
   const handleQuizComplete = (xpGained: number, codeBlocksGained: number) => {
     if (activeChallenge) {
+      let finalXp = xpGained;
+      let finalCodeBlocks = codeBlocksGained;
+
+      // Add a bonus for completing a boss challenge
+      if (activeChallenge.type === 'boss') {
+        finalXp = Math.round(finalXp * 1.5); // 50% XP bonus
+        finalCodeBlocks = Math.round(finalCodeBlocks * 1.5); // 50% CodeBlocks bonus
+      }
+
       setCompletedChallenges(prev => [...prev, activeChallenge.gateId]);
       setPlayer(prev => ({
         ...prev,
-        xp: prev.xp + xpGained,
-        codeBlocks: prev.codeBlocks + codeBlocksGained,
+        xp: prev.xp + finalXp,
+        codeBlocks: prev.codeBlocks + finalCodeBlocks,
       }));
       setActiveChallenge(null);
     }

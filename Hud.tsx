@@ -1,5 +1,5 @@
 import React from 'react';
-import { Player, LevelData } from '../types';
+import { Player, LevelData } from './types';
 
 interface HudProps {
   player: Player;
