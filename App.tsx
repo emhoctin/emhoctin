@@ -7,6 +7,8 @@ import Hud from './components/Hud';
 import { Player, Challenge, Zone, Question, UserRole } from './types';
 import { ZONES, LEVELS } from './constants';
 
+const LOCAL_STORAGE_KEY = 'teacherGeneratedZone';
+
 // Mock: In a real app, this would be loaded from a server or localStorage
 const initialPlayer: Player = {
   level: 1,
@@ -31,6 +33,21 @@ const App: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<UserRole>('student');
+
+  // Load custom zone from localStorage on initial render
+  useEffect(() => {
+    try {
+      const savedZoneJSON = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (savedZoneJSON) {
+        const savedZone = JSON.parse(savedZoneJSON);
+        setCustomZone(savedZone);
+      }
+    } catch (error) {
+      console.error("Failed to load custom zone from localStorage", error);
+      localStorage.removeItem(LOCAL_STORAGE_KEY);
+    }
+  }, []);
+
 
   useEffect(() => {
     // Check for level up
@@ -97,7 +114,8 @@ const App: React.FC = () => {
     if (!file) return;
     setIsGenerating(true);
     setGenerationError(null);
-    setCustomZone(null);
+    // Do not clear custom zone here, allow replacing it
+    // setCustomZone(null); 
 
     try {
       const base64Data = await fileToBase64(file);
@@ -148,18 +166,20 @@ const App: React.FC = () => {
       
       const newZone: Zone = {
         id: 'zone-custom',
-        name: `Vùng Dữ Liệu Tùy Chỉnh: ${file.name}`,
-        description: 'Một vùng dữ liệu được tạo ra từ tài liệu bạn đã tải lên.',
+        name: `Tài liệu: ${file.name}`,
+        description: 'Thử thách được tạo bởi giáo viên từ tài liệu ôn tập.',
         gates: [
           {
             id: 'gate-custom-1',
-            name: 'Cổng Thử Thách Tùy Chỉnh',
+            name: 'Cổng Thử Thách Chính',
             type: 'medium',
             questions: generatedQuestions,
           },
         ],
       };
       setCustomZone(newZone);
+      // Save to localStorage
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newZone));
 
     } catch (error) {
       console.error("Lỗi khi tạo câu hỏi:", error);
@@ -169,7 +189,21 @@ const App: React.FC = () => {
     }
   };
 
-  const allZones = customZone ? [...ZONES, customZone] : ZONES;
+  const handleClearCustomZone = () => {
+    setCustomZone(null);
+    localStorage.removeItem(LOCAL_STORAGE_KEY);
+  };
+
+
+  let zonesForDisplay: Zone[];
+
+  if (userRole === 'student' && customZone) {
+    // Học sinh chỉ thấy nội dung tùy chỉnh nếu có.
+    zonesForDisplay = [customZone];
+  } else {
+    // Giáo viên thấy tất cả. Học sinh thấy nội dung mặc định nếu chưa có nội dung tùy chỉnh.
+    zonesForDisplay = customZone ? [...ZONES, customZone] : ZONES;
+  }
 
   return (
     <div className="bg-gray-900 text-white min-h-screen font-sans">
@@ -177,7 +211,7 @@ const App: React.FC = () => {
       <main className="container mx-auto p-4 md:p-8">
         {!activeChallenge ? (
           <MainMenu 
-            zones={allZones} 
+            zones={zonesForDisplay} 
             onStartChallenge={handleStartChallenge}
             completedChallenges={completedChallenges}
             playerLevel={player.level}
@@ -185,6 +219,8 @@ const App: React.FC = () => {
             isGenerating={isGenerating}
             generationError={generationError}
             userRole={userRole}
+            customZone={customZone}
+            onClearCustomZone={handleClearCustomZone}
           />
         ) : (
           <QuizView 

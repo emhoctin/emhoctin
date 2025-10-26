@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { Zone, Gate, Challenge, UserRole } from '../types';
-import { CheckCircleIcon, LockClosedIcon, UploadIcon, SparklesIcon } from './Icons';
+import { ZONES as DEFAULT_ZONES } from '../constants';
+import { CheckCircleIcon, LockClosedIcon, UploadIcon, SparklesIcon, TrashIcon } from './Icons';
 
 interface MainMenuProps {
   zones: Zone[];
@@ -11,6 +12,8 @@ interface MainMenuProps {
   isGenerating: boolean;
   generationError: string | null;
   userRole: UserRole;
+  customZone: Zone | null;
+  onClearCustomZone: () => void;
 }
 
 const getGateIcon = (gate: Gate, isCompleted: boolean, isCustom: boolean) => {
@@ -31,7 +34,18 @@ const getGateIcon = (gate: Gate, isCompleted: boolean, isCustom: boolean) => {
     }
 };
 
-const MainMenu: React.FC<MainMenuProps> = ({ zones, onStartChallenge, completedChallenges, playerLevel, onFileUpload, isGenerating, generationError, userRole }) => {
+const MainMenu: React.FC<MainMenuProps> = ({ 
+  zones, 
+  onStartChallenge, 
+  completedChallenges, 
+  playerLevel, 
+  onFileUpload, 
+  isGenerating, 
+  generationError, 
+  userRole,
+  customZone,
+  onClearCustomZone
+}) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleUploadClick = () => {
@@ -44,49 +58,83 @@ const MainMenu: React.FC<MainMenuProps> = ({ zones, onStartChallenge, completedC
       onFileUpload(file);
     }
   };
+  
+  const TeacherZoneCreator = () => (
+    <div className="bg-gray-800 p-6 rounded-lg shadow-lg border-2 border-dashed border-purple-500">
+      <h2 className="text-2xl font-semibold mb-2 text-purple-400 flex items-center">
+        <SparklesIcon className="w-7 h-7 mr-3" />
+        Quản lý Tài liệu Ôn tập (Giáo viên)
+      </h2>
+      
+      <input
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        onChange={handleFileChange}
+        accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        disabled={isGenerating}
+      />
+      
+      {isGenerating && (
+         <div className="w-full text-center p-4 bg-gray-700 rounded-md">
+           <p className="animate-pulse">AI Đang Phân Tích Tài Liệu...</p>
+         </div>
+      )}
+
+      {!isGenerating && customZone && (
+        <div className="bg-gray-700/50 p-4 rounded-md">
+            <p className="text-gray-300 mb-4">Một tài liệu ôn tập đang hoạt động:</p>
+            <p className="font-bold text-white text-lg mb-4 truncate">{customZone.name}</p>
+            <div className="flex gap-4">
+                <button
+                    onClick={handleUploadClick}
+                    className="flex-1 flex items-center justify-center p-3 bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
+                >
+                    <UploadIcon className="w-5 h-5 mr-2" />
+                    Thay thế
+                </button>
+                 <button
+                    onClick={onClearCustomZone}
+                    className="flex-1 flex items-center justify-center p-3 bg-red-600 rounded-md hover:bg-red-700 transition-colors"
+                >
+                    <TrashIcon className="w-5 h-5 mr-2" />
+                    Xóa
+                </button>
+            </div>
+        </div>
+      )}
+
+      {!isGenerating && !customZone && (
+         <>
+            <p className="text-gray-400 mb-4">Tải lên tài liệu (PDF, DOCX) để AI tạo ra một thử thách dành riêng cho học sinh.</p>
+            <button
+              onClick={handleUploadClick}
+              className="w-full flex items-center justify-center p-4 bg-purple-600 rounded-md hover:bg-purple-700 transition-colors"
+            >
+              <UploadIcon className="w-6 h-6 mr-3" />
+              Chọn Tệp Để Tải Lên
+            </button>
+         </>
+      )}
+
+      {generationError && (
+        <p className="mt-4 text-center text-red-400 bg-red-900/50 p-3 rounded-md">{generationError}</p>
+      )}
+    </div>
+  );
+
 
   return (
     <div className="space-y-8">
       <h1 className="text-4xl font-bold text-center text-cyan-400 drop-shadow-lg">TRUNG TÂM CHỈ HUY</h1>
       
-      {/* Custom Zone Creator - Teacher only */}
-      {userRole === 'teacher' && (
-        <div className="bg-gray-800 p-6 rounded-lg shadow-lg border-2 border-dashed border-purple-500">
-          <h2 className="text-2xl font-semibold mb-2 text-purple-400 flex items-center">
-            <SparklesIcon className="w-7 h-7 mr-3" />
-            Tạo Vùng Dữ Liệu Tùy Chỉnh (Giáo viên)
-          </h2>
-          <p className="text-gray-400 mb-4">Tải lên tài liệu ôn tập của bạn (PDF, DOCX) và để AI tạo ra một thử thách dành riêng cho học sinh.</p>
-          
-          <input
-            type="file"
-            ref={fileInputRef}
-            className="hidden"
-            onChange={handleFileChange}
-            accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            disabled={isGenerating}
-          />
-          
-          <button
-            onClick={handleUploadClick}
-            disabled={isGenerating}
-            className="w-full flex items-center justify-center p-4 bg-purple-600 rounded-md hover:bg-purple-700 transition-colors disabled:bg-gray-600 disabled:cursor-wait"
-          >
-            <UploadIcon className="w-6 h-6 mr-3" />
-            {isGenerating ? 'AI Đang Phân Tích Tài Liệu...' : 'Chọn Tệp Để Tải Lên'}
-          </button>
+      {userRole === 'teacher' && <TeacherZoneCreator />}
 
-          {generationError && (
-            <p className="mt-4 text-center text-red-400 bg-red-900/50 p-3 rounded-md">{generationError}</p>
-          )}
-        </div>
-      )}
-
-
-      {zones.map((zone, zoneIndex) => {
+      {zones.map((zone) => {
         const isCustomZone = zone.id === 'zone-custom';
-        // Custom zones are always unlocked. Other zones depend on player level.
-        const isZoneLocked = !isCustomZone && (zoneIndex - (zones.some(z => z.id === 'zone-custom') ? 1 : 0) + 1 > playerLevel);
+        const defaultZoneIndex = DEFAULT_ZONES.findIndex(z => z.id === zone.id);
+        const requiredLevel = defaultZoneIndex !== -1 ? defaultZoneIndex + 1 : 1;
+        const isZoneLocked = !isCustomZone && playerLevel < requiredLevel;
 
         return (
           <div key={zone.id} className={`p-6 rounded-lg shadow-lg transition-all duration-300 ${isZoneLocked ? 'bg-gray-800/50' : isCustomZone ? 'bg-gray-800 border-2 border-yellow-500' : 'bg-gray-800'}`}>
@@ -95,7 +143,7 @@ const MainMenu: React.FC<MainMenuProps> = ({ zones, onStartChallenge, completedC
             {isZoneLocked && (
                  <div className="flex items-center text-red-400 p-3 bg-red-900/50 rounded-md">
                     <LockClosedIcon className="w-6 h-6 mr-3 flex-shrink-0" />
-                    <span className="font-semibold">Khu vực bị khóa: Yêu cầu Cấp {zoneIndex - (zones.some(z => z.id === 'zone-custom') ? 1 : 0) + 1} để truy cập.</span>
+                    <span className="font-semibold">Khu vực bị khóa: Yêu cầu Cấp {requiredLevel} để truy cập.</span>
                 </div>
             )}
             {!isZoneLocked && (
