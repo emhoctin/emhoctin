@@ -1,0 +1,18 @@
+body {
+  font-family: 'Share Tech Mono', monospace;
+  background-color: #111827; /* Corresponds to bg-gray-900 */
+}
+ /* Custom scrollbar for cyberpunk theme */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #1f2937; /* bg-gray-800 */
+}
+::-webkit-scrollbar-thumb {
+  background: #0891b2; /* cyan-600 */
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #06b6d4; /* cyan-500 */
+}
