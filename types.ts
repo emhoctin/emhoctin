@@ -1,29 +1,39 @@
-// Fix: The original content of this file was incorrect. It contained constants
-// that belong in 'constants.ts' and a circular import that broke the type system.
-// This new content defines and exports all the necessary types and interfaces for the application.
-// This single change resolves all type errors across the project.
-
 export interface Player {
   level: number;
   xp: number;
   codeBlocks: number;
+  name: string;
 }
 
-export interface Question {
+export type QuestionType = 'multiple-choice' | 'true-false';
+
+export interface BaseQuestion {
   id: string;
-  type: 'multiple-choice' | 'code-upload';
+  type: QuestionType;
   text: string;
-  options?: string[];
-  correctOptionIndex?: number;
   explanation: string;
   xp: number;
-  code?: string; // For code-upload questions
 }
+
+export interface MultipleChoiceQuestion extends BaseQuestion {
+  type: 'multiple-choice';
+  options: string[];
+  correctOptionIndex: number;
+}
+
+export interface TrueFalseQuestion extends BaseQuestion {
+  type: 'true-false';
+  statements: string[];
+  correctAnswers: boolean[]; // Array of 4 booleans, e.g., [true, false, true, false]
+}
+
+export type Question = MultipleChoiceQuestion | TrueFalseQuestion;
+
 
 export interface Gate {
   id: string;
   name: string;
-  type: 'easy' | 'medium' | 'hard' | 'boss';
+  type: 'easy' | 'medium' | 'hard' | 'boss'; // NB, TH, VD
   questions: Question[];
 }
 
@@ -47,5 +57,3 @@ export interface LevelData {
   title: string;
   xpToNextLevel: number;
 }
-
-export type UserRole = 'student' | 'teacher';

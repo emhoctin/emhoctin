@@ -1,119 +1,114 @@
-
 import { Zone, LevelData } from './types';
 
 export const LEVELS: LevelData[] = [
-  { level: 1, title: 'Tân Binh', xpToNextLevel: 100 },
-  { level: 2, title: 'Hạ Sĩ', xpToNextLevel: 250 },
-  { level: 3, title: 'Trung Sĩ', xpToNextLevel: 500 },
-  { level: 4, title: 'Thượng Sĩ', xpToNextLevel: 1000 },
-  { level: 5, title: 'Chuẩn Úy', xpToNextLevel: 2000 },
+  { level: 1, title: 'Tân Binh Mạng', xpToNextLevel: 100 },
+  { level: 2, title: 'Kỹ Sư Tập Sự', xpToNextLevel: 250 },
+  { level: 3, title: 'Chuyên Gia Gỡ Lỗi', xpToNextLevel: 500 },
+  { level: 4, title: 'Kiến Trúc Sư Hệ Thống', xpToNextLevel: 1000 },
+  { level: 5, title: 'Bậc Thầy Mạng Lưới', xpToNextLevel: 9999 },
 ];
 
 export const ZONES: Zone[] = [
   {
-    id: 'zone-1',
-    name: 'Khu Vực Huấn Luyện',
-    description: 'Bắt đầu hành trình của bạn tại đây, làm quen với những kiến thức cơ bản về lập trình.',
+    id: 'lesson-1',
+    name: 'Vùng Dữ Liệu 01: Dữ liệu, Thông tin và Xử lý thông tin',
+    description: 'Nạp các khái niệm nền tảng về thế giới số. Phân biệt và xử lý các đơn vị thông tin cơ bản.',
     gates: [
       {
-        id: 'gate-1-1',
-        name: 'Cổng Alpha: Biến và Kiểu dữ liệu',
+        id: 'gate-1-nb',
+        name: 'Cổng Mạng [NB]',
         type: 'easy',
         questions: [
           {
-            id: 'q-1-1-1',
+            id: 'l1-nb-mc-1',
             type: 'multiple-choice',
-            text: 'Trong JavaScript, từ khóa nào được dùng để khai báo một biến có giá trị không thể thay đổi?',
-            options: ['var', 'let', 'const', 'static'],
-            correctOptionIndex: 2,
-            explanation: '`const` được dùng để khai báo hằng số, giá trị của nó không thể được gán lại sau khi khởi tạo.',
-            xp: 10,
-          },
-          {
-            id: 'q-1-1-2',
-            type: 'multiple-choice',
-            text: 'Kiểu dữ liệu nào sau đây là một kiểu nguyên thủy (primitive type) trong JavaScript?',
-            options: ['Object', 'Array', 'String', 'Function'],
-            correctOptionIndex: 2,
-            explanation: 'String là một trong các kiểu dữ liệu nguyên thủy, cùng với Number, Boolean, Null, Undefined, Symbol, và BigInt.',
-            xp: 10,
-          },
-        ],
-      },
-      {
-        id: 'gate-1-2',
-        name: 'Cổng Beta: Hàm và Logic',
-        type: 'easy',
-        questions: [
-           {
-            id: 'q-1-2-1',
-            type: 'multiple-choice',
-            text: 'Đâu là cú pháp đúng để khai báo một hàm mũi tên (arrow function) trong JavaScript?',
-            options: ['function myFunction() {}', 'const myFunction = () => {}', 'def myFunction():', 'function = () => {}'],
+            text: 'Trong tin học, 1 Byte bằng bao nhiêu Bit?',
+            options: ['10 Bit', '8 Bit', '16 Bit', '4 Bit'],
             correctOptionIndex: 1,
-            explanation: '`const myFunction = () => {}` là cú pháp chính xác cho một arrow function được gán cho một biến.',
-            xp: 15
+            explanation: 'Đáp án đúng là B. Theo quy ước, 1 Byte = 8 Bit.',
+            xp: 10,
+          },
+          {
+            id: 'l1-nb-tf-1',
+            type: 'true-false',
+            text: 'Xác định các nhận định sau là Đúng (Đ) hay Sai (S):',
+            statements: [
+              'A. Dữ liệu là đối tượng được xử lý của máy tính.',
+              'B. Lệnh điều khiển máy tính thực hiện một nhiệm vụ nào đó gọi là thông tin.',
+              'C. Kết quả của việc xử lý dữ liệu là dữ liệu.',
+              'D. Máy tính có thể xử lý trực tiếp thông tin mà con người hiểu.'
+            ],
+            correctAnswers: [true, false, false, false], // Đ-S-S-S
+            explanation: 'Đáp án: Đ-S-S-S. B: Lệnh điều khiển là chương trình. C: Kết quả xử lý dữ liệu là thông tin. D: Máy tính xử lý dữ liệu, không phải thông tin.',
+            xp: 15,
           }
         ],
       },
+       {
+        id: 'gate-1-th',
+        name: 'Gỡ Lỗi [TH]',
+        type: 'medium',
+        questions: [
+          {
+            id: 'l1-th-mc-1',
+            type: 'multiple-choice',
+            text: 'Thiết bị nào sau đây là thiết bị vào-ra?',
+            options: ['Máy in', 'Bàn phím', 'Màn hình cảm ứng', 'Chuột'],
+            correctOptionIndex: 2,
+            explanation: 'Đáp án đúng là C. Màn hình cảm ứng vừa là thiết bị vào (nhận tương tác) vừa là thiết bị ra (hiển thị hình ảnh).',
+            xp: 20,
+          },
+        ]
+       }
     ],
   },
   {
-    id: 'zone-2',
-    name: 'Mặt Trận Thuật Toán',
-    description: 'Thử thách kỹ năng giải quyết vấn đề với các thuật toán cơ bản và cấu trúc dữ liệu.',
+    id: 'lesson-2',
+    name: 'Vùng Dữ Liệu 02: Vai trò của thiết bị số và xã hội tri thức',
+    description: 'Khám phá sự ảnh hưởng của công nghệ số đến xã hội và các thiết bị thông minh xung quanh chúng ta.',
     gates: [
       {
-        id: 'gate-2-1',
-        name: 'Cổng Gamma: Mảng và Vòng lặp',
-        type: 'medium',
+        id: 'gate-2-nb',
+        name: 'Cổng Mạng [NB]',
+        type: 'easy',
         questions: [
-            {
-                id: 'q-2-1-1',
-                type: 'code-upload',
-                text: 'Viết một hàm JavaScript nhận vào một mảng các số và trả về tổng của chúng. Tải lên một tệp `.js` chứa hàm có tên `calculateSum`.',
-                code: `function calculateSum(numbers) {\n  // Viết code của bạn ở đây\n}`,
-                explanation: 'Bạn cần sử dụng một vòng lặp (ví dụ: for hoặc for...of) hoặc phương thức `reduce` để duyệt qua mảng và cộng dồn các phần tử.',
-                xp: 50,
-            }
+          {
+            id: 'l2-nb-mc-1',
+            type: 'multiple-choice',
+            text: 'Đâu là một đặc trưng của xã hội tri thức?',
+            options: [
+              'Sản xuất nông nghiệp là hoạt động chính.',
+              'Mọi hoạt động đều có sự hỗ trợ của thiết bị số.',
+              'Kiến thức và sáng tạo là động lực phát triển.',
+              'Giao tiếp chủ yếu bằng thư tay.'
+            ],
+            correctOptionIndex: 2,
+            explanation: 'Đáp án đúng là C. Trong xã hội tri thức, tri thức, thông tin, và sự sáng tạo được coi là nguồn lực quan trọng nhất.',
+            xp: 10,
+          }
         ],
       },
       {
-        id: 'gate-2-2',
-        name: 'Cổng Delta: Thử thách Boss',
-        type: 'boss',
+        id: 'gate-2-th',
+        name: 'Gỡ Lỗi [TH]',
+        type: 'medium',
         questions: [
-          {
-            id: 'q-2-2-1',
-            type: 'code-upload',
-            text: 'Viết một hàm JavaScript để sắp xếp một mảng các số theo thứ tự tăng dần mà không sử dụng `Array.prototype.sort()`. Tải lên tệp `.js` chứa hàm `bubbleSort`.',
-            code: `function bubbleSort(arr) {\n  // Viết code của bạn ở đây\n}`,
-            explanation: 'Thuật toán sắp xếp nổi bọt (Bubble Sort) là một giải pháp đơn giản. Nó lặp đi lặp lại qua danh sách, so sánh các phần tử liền kề và hoán đổi chúng nếu chúng sai thứ tự.',
-            xp: 100,
-          },
-        ]
-      }
-    ]
-  },
-  {
-    id: 'zone-3',
-    name: 'Chiến Dịch API Gemini',
-    description: 'Khai phá sức mạnh của AI. Tích hợp và sử dụng Gemini API để giải quyết các vấn đề phức tạp.',
-    gates: [
-      {
-        id: 'gate-3-1',
-        name: 'Cổng Epsilon: Gọi API cơ bản',
-        type: 'hard',
-        questions: [
-          {
-            id: 'q-3-1-1',
-            type: 'code-upload',
-            text: 'Viết một đoạn mã Node.js sử dụng `@google/genai` để gửi một câu hỏi đơn giản ("Why is the sky blue?") đến mô hình "gemini-2.5-flash" và in ra câu trả lời. Tải lên một tệp `.js`.',
-            explanation: 'Bạn cần khởi tạo `GoogleGenAI` với API key, sau đó gọi `ai.models.generateContent` với tên mô hình và nội dung câu hỏi.',
-            xp: 150,
+           {
+            id: 'l2-th-tf-1',
+            type: 'true-false',
+            text: 'Xác định các nhận định sau là Đúng (Đ) hay Sai (S) về thiết bị số:',
+            statements: [
+              'A. Máy tính xách tay là một thiết bị thông minh.',
+              'B. Mọi thiết bị số đều là thiết bị thông minh.',
+              'C. Thiết bị thông minh có thể kết nối với các thiết bị khác.',
+              'D. Đồng hồ cơ là một thiết bị thông minh.'
+            ],
+            correctAnswers: [true, false, true, false], // Đ-S-Đ-S
+            explanation: 'Đáp án: Đ-S-Đ-S. B: Không phải mọi thiết bị số đều thông minh (ví dụ: máy tính Casio cũ). D: Đồng hồ cơ không phải là thiết bị số.',
+            xp: 25,
           }
         ]
       }
     ]
-  }
+  },
 ];

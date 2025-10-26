@@ -1,216 +1,179 @@
-
-import React, { useState, useCallback } from 'react';
-import { GenerateContentResponse } from '@google/genai';
-import { Challenge, Question } from '../types';
-import { UploadIcon } from './Icons';
-
-// Mock API for demonstration
-const mockEvaluateCode = (code: string, question: Question): Promise<GenerateContentResponse> => {
-  console.log("Evaluating code for question:", question.id);
-  console.log(code);
-  return new Promise(resolve => {
-    setTimeout(() => {
-      const success = Math.random() > 0.3; // 70% chance of success
-      const feedbackText = success
-        ? `Phân tích thành công: Mã của bạn hoạt động hiệu quả. ${question.explanation}`
-        : `Phân tích thất bại: Mã của bạn có lỗi logic. Gợi ý: ${question.explanation}`;
-
-      // Casting to any to mock the response structure
-      resolve({
-        text: JSON.stringify({ success, feedback: feedbackText }),
-      } as any);
-    }, 1500);
-  });
-};
+import React, { useState, useEffect } from 'react';
+import { Challenge, Question, MultipleChoiceQuestion, TrueFalseQuestion } from '../types';
+import FeedbackModal from './FeedbackModal';
 
 interface QuizViewProps {
   challenge: Challenge;
-  onComplete: (success: boolean, score: number, xpGained: number, codeBlocksGained: number) => void;
+  onComplete: (xpGained: number, codeBlocksGained: number) => void;
   onBack: () => void;
 }
 
 const QuizView: React.FC<QuizViewProps> = ({ challenge, onComplete, onBack }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<(number | string | null)[]>(new Array(challenge.questions.length).fill(null));
-  const [feedback, setFeedback] = useState<string[]>(new Array(challenge.questions.length).fill(''));
-  const [isLoading, setIsLoading] = useState(false);
-  const [isFinished, setIsFinished] = useState(false);
+  const [selectedMcqAnswer, setSelectedMcqAnswer] = useState<number | null>(null);
+  const [tfAnswers, setTfAnswers] = useState<{ [key: number]: boolean }>({});
+  
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+  const [isCurrentAnswerCorrect, setIsCurrentAnswerCorrect] = useState(false);
+  
+  const [totalXp, setTotalXp] = useState(0);
+  const [totalCodeBlocks, setTotalCodeBlocks] = useState(0);
   
   const currentQuestion = challenge.questions[currentQuestionIndex];
-  const totalQuestions = challenge.questions.length;
+  
+  useEffect(() => {
+    // Reset answers when question changes
+    setSelectedMcqAnswer(null);
+    setTfAnswers({});
+  }, [currentQuestion]);
 
-  const handleOptionSelect = (optionIndex: number) => {
-    if (feedback[currentQuestionIndex]) return;
+  const handleMcqSelect = (optionIndex: number) => {
+    setSelectedMcqAnswer(optionIndex);
+  };
 
-    const newAnswers = [...answers];
-    newAnswers[currentQuestionIndex] = optionIndex;
-    setAnswers(newAnswers);
+  const handleTfSelect = (statementIndex: number, value: boolean) => {
+    setTfAnswers(prev => ({
+      ...prev,
+      [statementIndex]: value
+    }));
+  };
 
-    const newFeedback = [...feedback];
-    if (optionIndex === currentQuestion.correctOptionIndex) {
-      newFeedback[currentQuestionIndex] = `Chính xác! ${currentQuestion.explanation}`;
-    } else {
-      newFeedback[currentQuestionIndex] = `Không chính xác. Gợi ý: ${currentQuestion.explanation}`;
+  const handleSubmit = () => {
+    if (!currentQuestion) return;
+    
+    let isCorrect = false;
+    if (currentQuestion.type === 'multiple-choice') {
+      if (selectedMcqAnswer === null) return;
+      isCorrect = selectedMcqAnswer === currentQuestion.correctOptionIndex;
+    } else if (currentQuestion.type === 'true-false') {
+      isCorrect = currentQuestion.correctAnswers.every((val, index) => val === tfAnswers[index]);
     }
-    setFeedback(newFeedback);
+
+    if (isCorrect) {
+      setTotalXp(prev => prev + currentQuestion.xp);
+      const codeBlocksGained = Math.round(currentQuestion.xp / 2);
+      setTotalCodeBlocks(prev => prev + codeBlocksGained);
+    }
+    
+    setIsCurrentAnswerCorrect(isCorrect);
+    setIsFeedbackModalOpen(true);
   };
+  
+  const handleNextQuestion = () => {
+    setIsFeedbackModalOpen(false);
+    const isLastQuestion = currentQuestionIndex === challenge.questions.length - 1;
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (isLoading || !event.target.files || event.target.files.length === 0) return;
-    
-    setIsLoading(true);
-    const file = event.target.files[0];
-    const reader = new FileReader();
-    
-    reader.onload = async (e) => {
-      const code = e.target?.result as string;
-      
-      const newAnswers = [...answers];
-      newAnswers[currentQuestionIndex] = code;
-      setAnswers(newAnswers);
-      
-      const response = await mockEvaluateCode(code, currentQuestion);
-      
-      const result = JSON.parse(response.text);
-      
-      const newFeedback = [...feedback];
-      newFeedback[currentQuestionIndex] = result.feedback;
-      setFeedback(newFeedback);
-
-      if (!result.success) {
-          const incorrectAnswers = [...answers];
-          incorrectAnswers[currentQuestionIndex] = "INCORRECT_CODE_ATTEMPT"; // Mark as incorrect
-          setAnswers(incorrectAnswers);
-      }
-      setIsLoading(false);
-    };
-    
-    reader.readAsText(file);
-  };
-
-  const goToNextQuestion = () => {
-    if (currentQuestionIndex < totalQuestions - 1) {
+    if (isLastQuestion) {
+      onComplete(totalXp, totalCodeBlocks);
+    } else {
       setCurrentQuestionIndex(prev => prev + 1);
-    } else {
-      finishQuiz();
     }
   };
 
-  const finishQuiz = useCallback(() => {
-      if (isFinished) return;
-      setIsFinished(true);
+  const renderMultipleChoiceQuestion = (question: MultipleChoiceQuestion) => (
+    <div>
+      <h3 className="text-xl md:text-2xl text-cyan-300 font-semibold">{question.text}</h3>
+      <ul className="mt-6 space-y-3">
+        {question.options.map((option, index) => (
+          <li key={index}>
+            <button
+              onClick={() => handleMcqSelect(index)}
+              className={`w-full text-left p-4 rounded-md transition-all border-2 ${
+                selectedMcqAnswer === index
+                  ? 'bg-cyan-600 border-cyan-400 scale-105 shadow-lg'
+                  : 'bg-gray-800 border-gray-700 hover:bg-gray-700/70'
+              }`}
+            >
+              <span className="font-mono text-cyan-400 mr-3">{String.fromCharCode(65 + index)}.</span>
+              <span className="font-medium text-white">{option}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 
-      let score = 0;
-      let xpGained = 0;
-      challenge.questions.forEach((q, index) => {
-          if (q.type === 'multiple-choice') {
-              if (answers[index] === q.correctOptionIndex) {
-                  score++;
-                  xpGained += q.xp;
-              }
-          } else if (q.type === 'code-upload') {
-              // Check if it's not the incorrect marker
-              if (answers[index] && answers[index] !== "INCORRECT_CODE_ATTEMPT") {
-                  score++;
-                  xpGained += q.xp;
-              }
-          }
-      });
-      
-      const success = score / totalQuestions >= 0.6; // Need at least 60% to pass
-      const codeBlocksGained = success ? (score * 10) : 0;
-      onComplete(success, score, xpGained, codeBlocksGained);
-  }, [answers, challenge.questions, isFinished, onComplete, totalQuestions]);
+  const renderTrueFalseQuestion = (question: TrueFalseQuestion) => (
+    <div>
+      <h3 className="text-xl md:text-2xl text-cyan-300 font-semibold">{question.text}</h3>
+      <ul className="mt-6 space-y-4">
+        {question.statements.map((statement, index) => (
+          <li key={index} className="p-4 bg-gray-800 rounded-md border border-gray-700 flex justify-between items-center">
+            <p className="flex-grow text-gray-300">{statement}</p>
+            <div className="flex space-x-2 ml-4">
+              <button onClick={() => handleTfSelect(index, true)} className={`px-4 py-2 rounded font-bold transition-colors ${tfAnswers[index] === true ? 'bg-green-500 text-white' : 'bg-gray-700 text-gray-300 hover:bg-green-700'}`}>Đ</button>
+              <button onClick={() => handleTfSelect(index, false)} className={`px-4 py-2 rounded font-bold transition-colors ${tfAnswers[index] === false ? 'bg-red-500 text-white' : 'bg-gray-700 text-gray-300 hover:bg-red-700'}`}>S</button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 
-  const currentFeedback = feedback[currentQuestionIndex];
+  const renderQuestion = () => {
+    if (!currentQuestion) return null;
+    switch (currentQuestion.type) {
+      case 'multiple-choice':
+        return renderMultipleChoiceQuestion(currentQuestion);
+      case 'true-false':
+        return renderTrueFalseQuestion(currentQuestion);
+      default:
+        return null;
+    }
+  };
+  
+  const isSubmitDisabled = () => {
+    if (!currentQuestion) return true;
+    if (currentQuestion.type === 'multiple-choice') {
+      return selectedMcqAnswer === null;
+    }
+    if (currentQuestion.type === 'true-false') {
+      return Object.keys(tfAnswers).length !== currentQuestion.statements.length;
+    }
+    return true;
+  };
+
+  if (!currentQuestion) {
+    return <div className="text-center text-xl">Loading challenge...</div>;
+  }
 
   return (
-    <div className="max-w-4xl mx-auto p-4">
-      <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold text-yellow-400">{challenge.name}</h1>
-          <button onClick={onBack} className="text-gray-400 hover:text-white">&times; Thoát</button>
-        </div>
-        <div className="mb-4">
-          <div className="w-full bg-gray-600 rounded-full h-2.5">
-            <div className="bg-blue-500 h-2.5 rounded-full" style={{ width: `${((currentQuestionIndex + 1) / totalQuestions) * 100}%` }}></div>
-          </div>
-          <p className="text-center text-sm text-gray-400 mt-2">Câu hỏi {currentQuestionIndex + 1} / {totalQuestions}</p>
+    <div className="max-w-4xl mx-auto">
+      <div className="flex justify-between items-center mb-6">
+        <button onClick={onBack} className="text-cyan-400 hover:text-cyan-200 font-semibold">
+          &larr; Quay lại Trung Tâm
+        </button>
+        <span className="text-gray-400 font-mono">Câu hỏi {currentQuestionIndex + 1} / {challenge.questions.length}</span>
+      </div>
+      
+      <div className="bg-gray-800/80 p-6 md:p-8 rounded-lg shadow-2xl border-2 border-cyan-700/50">
+        <h2 className="text-3xl font-bold text-cyan-300 mb-2" style={{ textShadow: '0 0 8px #0891b2' }}>
+          {challenge.name}
+        </h2>
+        <p className="text-gray-400 mb-8">Phân tích và chọn đáp án chính xác để vá lỗi hệ thống.</p>
+        
+        <div className="min-h-[250px]">
+          {renderQuestion()}
         </div>
         
-        <div className="bg-gray-900 p-6 rounded-md">
-          <h2 className="text-xl font-semibold text-cyan-300 mb-4">{currentQuestion.text}</h2>
-          
-          {currentQuestion.type === 'multiple-choice' && currentQuestion.options && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {currentQuestion.options.map((option, index) => {
-                const isSelected = answers[currentQuestionIndex] === index;
-                const isCorrect = currentQuestion.correctOptionIndex === index;
-                let buttonClass = 'bg-gray-700 hover:bg-gray-600';
-                if (currentFeedback) {
-                  if (isCorrect) {
-                    buttonClass = 'bg-green-700';
-                  } else if (isSelected && !isCorrect) {
-                    buttonClass = 'bg-red-700';
-                  }
-                }
-                
-                return (
-                  <button
-                    key={index}
-                    onClick={() => handleOptionSelect(index)}
-                    disabled={!!currentFeedback}
-                    className={`w-full text-left p-4 rounded-md transition-colors disabled:cursor-not-allowed ${buttonClass}`}
-                  >
-                    {option}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {currentQuestion.type === 'code-upload' && (
-            <div>
-              <pre className="bg-black p-4 rounded-md text-white overflow-x-auto mb-4">
-                <code>{currentQuestion.code}</code>
-              </pre>
-              <label htmlFor="file-upload" className={`
-                w-full flex justify-center items-center p-4 rounded-md transition-colors cursor-pointer 
-                ${isLoading ? 'bg-gray-600' : 'bg-blue-600 hover:bg-blue-700'}
-                ${currentFeedback ? 'hidden' : ''}
-              `}>
-                <UploadIcon className="w-6 h-6 mr-2" />
-                <span>{isLoading ? 'Đang phân tích...' : 'Tải lên tệp .js'}</span>
-              </label>
-              <input 
-                id="file-upload" 
-                type="file" 
-                className="hidden" 
-                accept=".js" 
-                onChange={handleFileUpload}
-                disabled={isLoading || !!currentFeedback}
-              />
-            </div>
-          )}
-
-          {currentFeedback && (
-            <div className={`mt-6 p-4 rounded-md ${answers[currentQuestionIndex] === currentQuestion.correctOptionIndex || (currentQuestion.type === 'code-upload' && answers[currentQuestionIndex] !== "INCORRECT_CODE_ATTEMPT") ? 'bg-green-900/50 text-green-300' : 'bg-red-900/50 text-red-300'}`}>
-              <p>{currentFeedback}</p>
-            </div>
-          )}
-        </div>
-        
-        <div className="mt-6 text-right">
-          {currentFeedback && (
-            <button
-              onClick={goToNextQuestion}
-              className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-md"
-            >
-              {currentQuestionIndex < totalQuestions - 1 ? 'Câu tiếp theo' : 'Hoàn thành'}
-            </button>
-          )}
+        <div className="mt-8 pt-6 border-t-2 border-cyan-800/50">
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitDisabled()}
+            className="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 px-4 rounded-lg transition-colors text-lg disabled:bg-gray-600 disabled:cursor-not-allowed"
+          >
+            Xác Nhận Tín Hiệu
+          </button>
         </div>
       </div>
+      
+      <FeedbackModal
+        isOpen={isFeedbackModalOpen}
+        onClose={handleNextQuestion}
+        isCorrect={isCurrentAnswerCorrect}
+        explanation={currentQuestion.explanation}
+        isLastQuestion={currentQuestionIndex === challenge.questions.length - 1}
+      />
     </div>
   );
 };
