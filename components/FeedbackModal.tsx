@@ -3,37 +3,53 @@ import React from 'react';
 import { CheckCircleIcon, XCircleIcon } from './Icons';
 
 interface FeedbackModalProps {
-  isCorrect: boolean;
-  explanation: string;
-  onNext: () => void;
+  isOpen: boolean;
+  onClose: () => void;
+  success: boolean;
+  score: number;
+  totalScore: number;
+  xpGained: number;
+  codeBlocksGained: number;
 }
 
-const FeedbackModal: React.FC<FeedbackModalProps> = ({ isCorrect, explanation, onNext }) => {
-  const title = isCorrect ? 'GIẢI MÃ THÀNH CÔNG' : 'LỖI HỆ THỐNG';
-  const Icon = isCorrect ? CheckCircleIcon : XCircleIcon;
-  const colorClass = isCorrect ? 'text-green-400' : 'text-red-400';
-  const borderColorClass = isCorrect ? 'border-green-500' : 'border-red-500';
-  const glowClass = isCorrect ? 'cyber-glow' : 'cyber-glow-red';
+const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, success, score, totalScore, xpGained, codeBlocksGained }) => {
+  if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 backdrop-blur-sm p-4">
-      <div className={`w-full max-w-lg p-6 bg-gray-900/90 border-2 ${borderColorClass} ${glowClass} rounded-lg flex flex-col items-center`}>
-        <Icon className={`w-16 h-16 mb-4 ${colorClass}`} />
-        <h3 className={`text-2xl font-bold mb-4 ${colorClass}`}>{title}</h3>
-        <div className="text-center text-gray-300 mb-6">
-          <p className="font-bold">Phân tích:</p>
-          <p>{explanation}</p>
+    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 transition-opacity">
+      <div className="bg-gray-800 rounded-lg shadow-xl p-8 max-w-md w-full transform transition-all scale-100">
+        <div className="text-center">
+          {success ? (
+            <CheckCircleIcon className="w-20 h-20 text-green-500 mx-auto animate-pulse" />
+          ) : (
+            <XCircleIcon className="w-20 h-20 text-red-500 mx-auto" />
+          )}
+          <h2 className="mt-4 text-3xl font-bold text-white">
+            {success ? 'Nhiệm Vụ Thành Công!' : 'Nhiệm Vụ Thất Bại'}
+          </h2>
+          <p className="mt-2 text-lg text-gray-400">
+            Bạn đạt được {score} / {totalScore} điểm.
+          </p>
+          <div className="mt-6 text-left space-y-3 bg-gray-700 p-4 rounded-md">
+            <p className="text-lg text-cyan-400">
+              <strong>Phần thưởng:</strong>
+            </p>
+            <p className="text-md text-white">
+              + {xpGained} XP
+            </p>
+            <p className="text-md text-yellow-400">
+              + {codeBlocksGained} CodeBlocks
+            </p>
+          </div>
         </div>
-        <button
-          onClick={onNext}
-          className={`px-8 py-3 rounded-md font-bold uppercase tracking-wider transition-all duration-300 ${
-            isCorrect 
-              ? 'bg-green-600/50 border border-green-400 text-green-300 hover:bg-green-500/50 hover:shadow-green-500/50' 
-              : 'bg-blue-600/50 border border-blue-400 text-blue-300 hover:bg-blue-500/50 hover:shadow-blue-500/50'
-          }`}
-        >
-          Tiếp Tục
-        </button>
+        <div className="mt-8">
+          <button
+            onClick={onClose}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors"
+          >
+            Trở về Trung Tâm Chỉ Huy
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -1,9 +1,8 @@
-
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hành Trình Kiến Tạo Mạng</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,51 +11,36 @@
     <style>
       body {
         font-family: 'Share Tech Mono', monospace;
-        color: #00ff41; /* Neon Green */
-        text-shadow: 0 0 5px #00ff41, 0 0 10px #00ff41;
+        background-color: #111827; /* Corresponds to bg-gray-900 */
       }
-      .cyber-glow {
-        box-shadow: 0 0 5px rgba(0, 255, 65, 0.8), 0 0 10px rgba(0, 255, 65, 0.6), 0 0 15px rgba(0, 255, 65, 0.4);
-      }
-      .cyber-glow-blue {
-        box-shadow: 0 0 5px rgba(0, 191, 255, 0.8), 0 0 10px rgba(0, 191, 255, 0.6), 0 0 15px rgba(0, 191, 255, 0.4);
-      }
-      .cyber-glow-red {
-        box-shadow: 0 0 5px rgba(255, 0, 0, 0.8), 0 0 10px rgba(255, 0, 0, 0.6), 0 0 15px rgba(255, 0, 0, 0.4);
-      }
-      .cyber-border {
-        border: 1px solid rgba(0, 255, 65, 0.5);
-      }
-       .cyber-border-blue {
-        border: 1px solid rgba(0, 191, 255, 0.5);
-      }
-      /* Custom scrollbar for a more cyberpunk feel */
+       /* Custom scrollbar for cyberpunk theme */
       ::-webkit-scrollbar {
         width: 8px;
       }
       ::-webkit-scrollbar-track {
-        background: #0a0a0a;
+        background: #1f2937; /* bg-gray-800 */
       }
       ::-webkit-scrollbar-thumb {
-        background: #00ff41;
-        box-shadow: 0 0 5px #00ff41;
+        background: #0891b2; /* cyan-600 */
+        border-radius: 4px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #00dd38;
+        background: #06b6d4; /* cyan-500 */
       }
     </style>
-  <script type="importmap">
+</head>
+<body>
+    <div id="root"></div>
+    <script type="importmap">
 {
   "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0"
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.27.0"
   }
 }
 </script>
-</head>
-  <body class="bg-gray-900 bg-grid-pattern">
-    <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
-  </body>
+</body>
 </html>

@@ -1,79 +1,135 @@
-
-import React, from 'react';
-import { GameState, Challenge, Zone, Gate } from '../types';
-import { ZONES_DATA } from '../constants';
-import { LockClosedIcon, CheckCircleIcon } from './Icons';
-
+import React, { useRef } from 'react';
+import { Zone, Gate, Challenge, UserRole } from '../types';
+import { CheckCircleIcon, LockClosedIcon, UploadIcon, SparklesIcon } from './Icons';
 
 interface MainMenuProps {
-  gameState: GameState;
+  zones: Zone[];
   onStartChallenge: (challenge: Challenge) => void;
+  completedChallenges: string[];
+  playerLevel: number;
+  onFileUpload: (file: File) => void;
+  isGenerating: boolean;
+  generationError: string | null;
+  userRole: UserRole;
 }
 
-const MainMenu: React.FC<MainMenuProps> = ({ gameState, onStartChallenge }) => {
+const getGateIcon = (gate: Gate, isCompleted: boolean, isCustom: boolean) => {
+    const baseClasses = "w-8 h-8 mr-4 flex-shrink-0";
+    if (isCompleted) {
+        return <CheckCircleIcon className={`${baseClasses} text-green-500`} />;
+    }
+    if (isCustom) {
+        return <SparklesIcon className={`${baseClasses} text-yellow-400`} />;
+    }
+    // Using simple divs for icons to avoid complexity
+    switch (gate.type) {
+        case 'easy': return <div className={`${baseClasses} bg-blue-500 rounded-full border-2 border-blue-300`}></div>;
+        case 'medium': return <div className={`${baseClasses} bg-yellow-500 rounded-full border-2 border-yellow-300`}></div>;
+        case 'hard': return <div className={`${baseClasses} bg-red-500 rounded-full border-2 border-red-300`}></div>;
+        case 'boss': return <div className={`${baseClasses} bg-purple-600 rounded-full border-2 border-yellow-400 animate-pulse`}></div>;
+        default: return <div className={`${baseClasses} bg-gray-500 rounded-full`}></div>;
+    }
+};
 
-  const renderGate = (gate: Gate, zone: Zone) => {
-    const isCompleted = gameState.completedChallenges.includes(`${zone.id}-${gate.id}`);
-    const gateColorClass = isCompleted ? 'border-green-500 text-green-500' : 'border-blue-500 text-blue-400';
-    const gateBgClass = isCompleted ? 'bg-green-500/10' : 'bg-blue-500/10';
-    const glowClass = isCompleted ? 'hover:shadow-green-500/50' : 'hover:shadow-blue-500/50';
+const MainMenu: React.FC<MainMenuProps> = ({ zones, onStartChallenge, completedChallenges, playerLevel, onFileUpload, isGenerating, generationError, userRole }) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-    return (
-      <button
-        key={gate.id}
-        onClick={() => onStartChallenge({ 
-            zoneId: zone.id,
-            gateId: gate.id,
-            name: `${zone.name} - ${gate.name}`,
-            questions: gate.questions,
-            type: gate.type,
-        })}
-        className={`w-full p-3 my-2 text-left rounded-md border ${gateColorClass} ${gateBgClass} transition-all duration-300 transform hover:scale-105 ${glowClass} flex items-center justify-between shadow-lg`}
-      >
-        <div>
-          <h4 className="font-bold">{gate.name}</h4>
-          <p className="text-xs opacity-70">{gate.questions.length} câu hỏi - Cấp độ: {gate.type}</p>
-        </div>
-        {isCompleted && <CheckCircleIcon className="w-6 h-6 text-green-400" />}
-      </button>
-    );
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
   };
-  
-  const isZoneUnlocked = (zone: Zone, index: number) => {
-    if (index === 0) return true; // First zone is always unlocked
-    const previousZone = ZONES_DATA.zones[index - 1];
-    const bossGate = previousZone.gates.find(g => g.type === 'boss');
-    if (!bossGate) return true; // If previous zone has no boss, unlock next
-    return gameState.completedChallenges.includes(`${previousZone.id}-${bossGate.id}`);
-  }
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      onFileUpload(file);
+    }
+  };
 
   return (
-    <div className="w-full">
-      <h2 className="text-2xl font-bold text-center mb-6 uppercase text-yellow-300" style={{ textShadow: '0 0 5px #fef08a' }}>Bản Đồ Mạng Lưới</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {ZONES_DATA.zones.map((zone, index) => {
-           const unlocked = isZoneUnlocked(zone, index);
-           if (unlocked) {
-             return (
-              <div key={zone.id} className="cyber-border-blue cyber-glow-blue bg-black/50 p-4 rounded-lg">
-                <h3 className="text-xl font-bold mb-2 text-blue-300">{zone.name}</h3>
-                <p className="text-sm opacity-80 mb-4">{zone.description}</p>
-                <div>{zone.gates.map(gate => renderGate(gate, zone))}</div>
-              </div>
-             )
-           } else {
-             return (
-              <div key={zone.id} className="cyber-border border-gray-600 bg-black/50 p-4 rounded-lg opacity-50 flex items-center justify-center">
-                 <LockClosedIcon className="w-12 h-12 text-gray-500 mr-4" />
-                <div>
-                  <h3 className="text-xl font-bold mb-2 text-gray-400">{zone.name}</h3>
-                  <p className="text-sm">Hoàn thành Trùm Cuối của Vùng Dữ Liệu trước để mở khóa.</p>
+    <div className="space-y-8">
+      <h1 className="text-4xl font-bold text-center text-cyan-400 drop-shadow-lg">TRUNG TÂM CHỈ HUY</h1>
+      
+      {/* Custom Zone Creator - Teacher only */}
+      {userRole === 'teacher' && (
+        <div className="bg-gray-800 p-6 rounded-lg shadow-lg border-2 border-dashed border-purple-500">
+          <h2 className="text-2xl font-semibold mb-2 text-purple-400 flex items-center">
+            <SparklesIcon className="w-7 h-7 mr-3" />
+            Tạo Vùng Dữ Liệu Tùy Chỉnh (Giáo viên)
+          </h2>
+          <p className="text-gray-400 mb-4">Tải lên tài liệu ôn tập của bạn (PDF, DOCX) và để AI tạo ra một thử thách dành riêng cho học sinh.</p>
+          
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            onChange={handleFileChange}
+            accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            disabled={isGenerating}
+          />
+          
+          <button
+            onClick={handleUploadClick}
+            disabled={isGenerating}
+            className="w-full flex items-center justify-center p-4 bg-purple-600 rounded-md hover:bg-purple-700 transition-colors disabled:bg-gray-600 disabled:cursor-wait"
+          >
+            <UploadIcon className="w-6 h-6 mr-3" />
+            {isGenerating ? 'AI Đang Phân Tích Tài Liệu...' : 'Chọn Tệp Để Tải Lên'}
+          </button>
+
+          {generationError && (
+            <p className="mt-4 text-center text-red-400 bg-red-900/50 p-3 rounded-md">{generationError}</p>
+          )}
+        </div>
+      )}
+
+
+      {zones.map((zone, zoneIndex) => {
+        const isCustomZone = zone.id === 'zone-custom';
+        // Custom zones are always unlocked. Other zones depend on player level.
+        const isZoneLocked = !isCustomZone && (zoneIndex - (zones.some(z => z.id === 'zone-custom') ? 1 : 0) + 1 > playerLevel);
+
+        return (
+          <div key={zone.id} className={`p-6 rounded-lg shadow-lg transition-all duration-300 ${isZoneLocked ? 'bg-gray-800/50' : isCustomZone ? 'bg-gray-800 border-2 border-yellow-500' : 'bg-gray-800'}`}>
+            <h2 className={`text-2xl font-semibold mb-2 ${isCustomZone ? 'text-yellow-400' : 'text-cyan-400'}`}>{zone.name}</h2>
+            <p className="text-gray-400 mb-4">{zone.description}</p>
+            {isZoneLocked && (
+                 <div className="flex items-center text-red-400 p-3 bg-red-900/50 rounded-md">
+                    <LockClosedIcon className="w-6 h-6 mr-3 flex-shrink-0" />
+                    <span className="font-semibold">Khu vực bị khóa: Yêu cầu Cấp {zoneIndex - (zones.some(z => z.id === 'zone-custom') ? 1 : 0) + 1} để truy cập.</span>
                 </div>
-              </div>
-             )
-           }
-        })}
-      </div>
+            )}
+            {!isZoneLocked && (
+              <ul className="space-y-4">
+                {zone.gates.map(gate => {
+                  const isCompleted = completedChallenges.includes(gate.id);
+                  const challenge: Challenge = {
+                    zoneId: zone.id,
+                    gateId: gate.id,
+                    name: gate.name,
+                    questions: gate.questions,
+                    type: gate.type,
+                  };
+                  return (
+                    <li key={gate.id}>
+                      <button
+                        onClick={() => onStartChallenge(challenge)}
+                        disabled={isCompleted}
+                        className="w-full flex items-center p-4 bg-gray-700 rounded-md hover:bg-gray-600 transition-colors disabled:bg-gray-900/50 disabled:cursor-not-allowed disabled:text-gray-500"
+                      >
+                        {getGateIcon(gate, isCompleted, isCustomZone)}
+                        <span className="flex-grow text-left font-medium">{gate.name}</span>
+                        <span className={`px-3 py-1 text-xs font-bold rounded-full ml-4 ${isCompleted ? 'bg-gray-600' : isCustomZone ? 'bg-yellow-600' : gate.type === 'easy' ? 'bg-blue-600' : gate.type === 'medium' ? 'bg-yellow-600' : gate.type === 'hard' ? 'bg-red-600' : 'bg-purple-700'}`}>
+                          {gate.type.toUpperCase()}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 };

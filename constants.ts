@@ -1,76 +1,119 @@
 
-import { Zone, GameState, LevelData } from './types';
+import { Zone, LevelData } from './types';
 
-export const ZONES_DATA: { zones: Zone[]; levels: LevelData[] } = {
-  levels: [
-    { level: 1, title: "Tân Binh Mạng", xpToNextLevel: 100 },
-    { level: 2, title: "Kỹ Sư Tập Sự", xpToNextLevel: 250 },
-    { level: 3, title: "Chuyên Gia Gỡ Lỗi", xpToNextLevel: 500 },
-    { level: 4, title: "Kiến Trúc Sư Hệ Thống", xpToNextLevel: 1000 },
-    { level: 5, title: "Bậc Thầy Mạng Lưới", xpToNextLevel: 9999 },
-  ],
-  zones: [
-    {
-      id: 'zone1',
-      name: 'Vùng Dữ Liệu: Nhập Môn',
-      description: 'Khái niệm cơ bản về Tin học và máy tính.',
-      gates: [
-        {
-          id: 'gate1_1',
-          name: 'Cổng Mạng 1: Data Scan',
-          type: 'easy',
-          questions: [
-            { text: "CPU là viết tắt của từ gì?", options: ["Central Processing Unit", "Computer Personal Unit", "Central Power Unit", "Control Process Unit"], correctAnswerIndex: 0, explanation: "CPU (Central Processing Unit) là bộ xử lý trung tâm, được coi là bộ não của máy tính." },
-            { text: "Thiết bị nào sau đây là thiết bị nhập?", options: ["Màn hình", "Loa", "Máy in", "Bàn phím"], correctAnswerIndex: 3, explanation: "Bàn phím là thiết bị nhập (input device) dùng để đưa dữ liệu vào máy tính." },
-            { text: "1 Kilobyte (KB) bằng bao nhiêu Bytes?", options: ["1000 Bytes", "1024 Bytes", "100 Bytes", "2048 Bytes"], correctAnswerIndex: 1, explanation: "Trong hệ nhị phân, 1 KB bằng 1024 Bytes (2^10 Bytes)." },
-          ],
-        },
-        {
-          id: 'gate1_2',
-          name: 'Cổng Mạng 2: Logic Debug',
-          type: 'medium',
-          questions: [
-            { text: "RAM là loại bộ nhớ gì?", options: ["Bộ nhớ chỉ đọc", "Bộ nhớ truy cập ngẫu nhiên", "Bộ nhớ ngoài", "Bộ nhớ cache"], correctAnswerIndex: 1, explanation: "RAM (Random Access Memory) là bộ nhớ truy cập ngẫu nhiên, dữ liệu sẽ mất khi mất điện." },
-            { text: "Phần mềm nào dùng để duyệt web?", options: ["Microsoft Word", "Google Chrome", "Adobe Photoshop", "WinRAR"], correctAnswerIndex: 1, explanation: "Google Chrome là một trình duyệt web phổ biến." },
-          ],
-        },
-        {
-          id: 'gate1_3',
-          name: 'Boss: Malware Tin Tặc',
-          type: 'boss',
-          questions: [
-            { text: "Hệ điều hành là gì?", options: ["Một phần mềm ứng dụng", "Phần mềm hệ thống quản lý phần cứng và phần mềm", "Một thiết bị phần cứng", "Một loại virus"], correctAnswerIndex: 1, explanation: "Hệ điều hành là phần mềm hệ thống cốt lõi quản lý mọi tài nguyên của máy tính." },
-            { text: "Đâu là một ví dụ về phần mềm độc hại (malware)?", options: ["Hệ điều hành Windows", "Trình duyệt Firefox", "Trojan Horse", "Phần mềm diệt virus"], correctAnswerIndex: 2, explanation: "Trojan Horse là một loại malware giả dạng phần mềm hợp pháp để xâm nhập vào hệ thống." },
-            { text: "Đuôi tệp nào thường được liên kết với tệp thực thi trên Windows?", options: [".txt", ".jpg", ".mp3", ".exe"], correctAnswerIndex: 3, explanation: "Tệp .exe (executable) là tệp chương trình có thể chạy được trên hệ điều hành Windows." },
-          ],
-        },
-      ],
-    },
-    {
-      id: 'zone2',
-      name: 'Vùng Dữ Liệu: Lập Trình Cơ Bản',
-      description: 'Các cấu trúc lệnh và thuật toán trong lập trình.',
-      gates: [
-        {
-          id: 'gate2_1',
-          name: 'Cổng Mạng 1: Syntax Scan',
-          type: 'easy',
-          questions: [
-            { text: "Trong Pascal, từ khóa để khai báo biến là gì?", options: ["var", "int", "string", "const"], correctAnswerIndex: 0, explanation: "Từ khóa 'var' được sử dụng để bắt đầu một khối khai báo biến trong ngôn ngữ lập trình Pascal." },
-            { text: "Vòng lặp `for` thường được sử dụng khi nào?", options: ["Khi không biết số lần lặp", "Khi số lần lặp được xác định trước", "Chỉ để lặp qua mảng", "Khi điều kiện lặp luôn đúng"], correctAnswerIndex: 1, explanation: "Vòng lặp `for` là lựa chọn lý tưởng khi bạn biết chính xác số lần cần thực hiện một khối lệnh." },
-          ],
-        },
-      ],
-    },
-  ],
-};
+export const LEVELS: LevelData[] = [
+  { level: 1, title: 'Tân Binh', xpToNextLevel: 100 },
+  { level: 2, title: 'Hạ Sĩ', xpToNextLevel: 250 },
+  { level: 3, title: 'Trung Sĩ', xpToNextLevel: 500 },
+  { level: 4, title: 'Thượng Sĩ', xpToNextLevel: 1000 },
+  { level: 5, title: 'Chuẩn Úy', xpToNextLevel: 2000 },
+];
 
-export const INITIAL_GAME_STATE: GameState = {
-  currentScreen: 'main_menu',
-  player: {
-    level: 1,
-    xp: 0,
-    codeBlocks: 50,
+export const ZONES: Zone[] = [
+  {
+    id: 'zone-1',
+    name: 'Khu Vực Huấn Luyện',
+    description: 'Bắt đầu hành trình của bạn tại đây, làm quen với những kiến thức cơ bản về lập trình.',
+    gates: [
+      {
+        id: 'gate-1-1',
+        name: 'Cổng Alpha: Biến và Kiểu dữ liệu',
+        type: 'easy',
+        questions: [
+          {
+            id: 'q-1-1-1',
+            type: 'multiple-choice',
+            text: 'Trong JavaScript, từ khóa nào được dùng để khai báo một biến có giá trị không thể thay đổi?',
+            options: ['var', 'let', 'const', 'static'],
+            correctOptionIndex: 2,
+            explanation: '`const` được dùng để khai báo hằng số, giá trị của nó không thể được gán lại sau khi khởi tạo.',
+            xp: 10,
+          },
+          {
+            id: 'q-1-1-2',
+            type: 'multiple-choice',
+            text: 'Kiểu dữ liệu nào sau đây là một kiểu nguyên thủy (primitive type) trong JavaScript?',
+            options: ['Object', 'Array', 'String', 'Function'],
+            correctOptionIndex: 2,
+            explanation: 'String là một trong các kiểu dữ liệu nguyên thủy, cùng với Number, Boolean, Null, Undefined, Symbol, và BigInt.',
+            xp: 10,
+          },
+        ],
+      },
+      {
+        id: 'gate-1-2',
+        name: 'Cổng Beta: Hàm và Logic',
+        type: 'easy',
+        questions: [
+           {
+            id: 'q-1-2-1',
+            type: 'multiple-choice',
+            text: 'Đâu là cú pháp đúng để khai báo một hàm mũi tên (arrow function) trong JavaScript?',
+            options: ['function myFunction() {}', 'const myFunction = () => {}', 'def myFunction():', 'function = () => {}'],
+            correctOptionIndex: 1,
+            explanation: '`const myFunction = () => {}` là cú pháp chính xác cho một arrow function được gán cho một biến.',
+            xp: 15
+          }
+        ],
+      },
+    ],
   },
-  completedChallenges: [],
-};
+  {
+    id: 'zone-2',
+    name: 'Mặt Trận Thuật Toán',
+    description: 'Thử thách kỹ năng giải quyết vấn đề với các thuật toán cơ bản và cấu trúc dữ liệu.',
+    gates: [
+      {
+        id: 'gate-2-1',
+        name: 'Cổng Gamma: Mảng và Vòng lặp',
+        type: 'medium',
+        questions: [
+            {
+                id: 'q-2-1-1',
+                type: 'code-upload',
+                text: 'Viết một hàm JavaScript nhận vào một mảng các số và trả về tổng của chúng. Tải lên một tệp `.js` chứa hàm có tên `calculateSum`.',
+                code: `function calculateSum(numbers) {\n  // Viết code của bạn ở đây\n}`,
+                explanation: 'Bạn cần sử dụng một vòng lặp (ví dụ: for hoặc for...of) hoặc phương thức `reduce` để duyệt qua mảng và cộng dồn các phần tử.',
+                xp: 50,
+            }
+        ],
+      },
+      {
+        id: 'gate-2-2',
+        name: 'Cổng Delta: Thử thách Boss',
+        type: 'boss',
+        questions: [
+          {
+            id: 'q-2-2-1',
+            type: 'code-upload',
+            text: 'Viết một hàm JavaScript để sắp xếp một mảng các số theo thứ tự tăng dần mà không sử dụng `Array.prototype.sort()`. Tải lên tệp `.js` chứa hàm `bubbleSort`.',
+            code: `function bubbleSort(arr) {\n  // Viết code của bạn ở đây\n}`,
+            explanation: 'Thuật toán sắp xếp nổi bọt (Bubble Sort) là một giải pháp đơn giản. Nó lặp đi lặp lại qua danh sách, so sánh các phần tử liền kề và hoán đổi chúng nếu chúng sai thứ tự.',
+            xp: 100,
+          },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'zone-3',
+    name: 'Chiến Dịch API Gemini',
+    description: 'Khai phá sức mạnh của AI. Tích hợp và sử dụng Gemini API để giải quyết các vấn đề phức tạp.',
+    gates: [
+      {
+        id: 'gate-3-1',
+        name: 'Cổng Epsilon: Gọi API cơ bản',
+        type: 'hard',
+        questions: [
+          {
+            id: 'q-3-1-1',
+            type: 'code-upload',
+            text: 'Viết một đoạn mã Node.js sử dụng `@google/genai` để gửi một câu hỏi đơn giản ("Why is the sky blue?") đến mô hình "gemini-2.5-flash" và in ra câu trả lời. Tải lên một tệp `.js`.',
+            explanation: 'Bạn cần khởi tạo `GoogleGenAI` với API key, sau đó gọi `ai.models.generateContent` với tên mô hình và nội dung câu hỏi.',
+            xp: 150,
+          }
+        ]
+      }
+    ]
+  }
+];

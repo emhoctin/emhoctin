@@ -1,81 +1,213 @@
-
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
+import { GoogleGenAI, GenerateContentResponse, Type } from '@google/genai';
 import MainMenu from './components/MainMenu';
 import QuizView from './components/QuizView';
-import { GameState, Challenge } from './types';
-import { INITIAL_GAME_STATE, ZONES_DATA } from './constants';
+import FeedbackModal from './components/FeedbackModal';
 import Hud from './components/Hud';
+import { Player, Challenge, Zone, Question, UserRole } from './types';
+import { ZONES, LEVELS } from './constants';
+
+// Mock: In a real app, this would be loaded from a server or localStorage
+const initialPlayer: Player = {
+  level: 1,
+  xp: 0,
+  codeBlocks: 100,
+};
 
 const App: React.FC = () => {
-  const [gameState, setGameState] = useState<GameState>(INITIAL_GAME_STATE);
+  const [player, setPlayer] = useState<Player>(initialPlayer);
+  const [completedChallenges, setCompletedChallenges] = useState<string[]>([]);
   const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+  const [lastQuizResult, setLastQuizResult] = useState<{
+    success: boolean;
+    score: number;
+    totalScore: number;
+    xpGained: number;
+    codeBlocksGained: number;
+  } | null>(null);
 
-  const startChallenge = useCallback((challenge: Challenge) => {
+  const [customZone, setCustomZone] = useState<Zone | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<UserRole>('student');
+
+  useEffect(() => {
+    // Check for level up
+    const currentLevelData = LEVELS.find(l => l.level === player.level);
+    if (currentLevelData && player.xp >= currentLevelData.xpToNextLevel) {
+      // Find the next level data, but don't exceed max level
+      const nextLevel = LEVELS.find(l => l.level === player.level + 1);
+      if (nextLevel) {
+          setPlayer(prev => ({ ...prev, level: prev.level + 1 }));
+      }
+    }
+  }, [player.xp, player.level]);
+  
+  const toggleUserRole = () => {
+    setUserRole(prevRole => (prevRole === 'teacher' ? 'student' : 'teacher'));
+  };
+
+  const handleStartChallenge = (challenge: Challenge) => {
     setActiveChallenge(challenge);
-    setGameState(prev => ({ ...prev, currentScreen: 'quiz' }));
-  }, []);
+  };
 
-  const endChallenge = useCallback((answeredCorrectly: number) => {
-    if (activeChallenge) {
-      const newXp = gameState.player.xp + answeredCorrectly * 10;
-      const newCodeBlocks = gameState.player.codeBlocks + answeredCorrectly * 5;
-      
-      const completedChallengeId = `${activeChallenge.zoneId}-${activeChallenge.gateId}`;
-
-      setGameState(prev => {
-        let player = { ...prev.player, xp: newXp, codeBlocks: newCodeBlocks };
-        const { xpToNextLevel } = ZONES_DATA.levels[player.level - 1];
-        if (player.xp >= xpToNextLevel) {
-          player.level += 1;
-          player.xp -= xpToNextLevel;
-        }
-
-        return {
-          ...prev,
-          player,
-          completedChallenges: [...new Set([...prev.completedChallenges, completedChallengeId])],
-          currentScreen: 'main_menu',
-        };
-      });
-    }
+  const handleBackToMenu = () => {
     setActiveChallenge(null);
-  }, [activeChallenge, gameState.player.xp, gameState.player.codeBlocks]);
-
-  const useItem = (itemId: string) => {
-    console.log(`Using item: ${itemId}`);
-    // This is where item logic would be implemented.
-    // For this example, we'll just log it.
   };
+  
+  const handleQuizComplete = (success: boolean, score: number, xpGained: number, codeBlocksGained: number) => {
+    if (activeChallenge) {
+      setLastQuizResult({ 
+        success, 
+        score, 
+        totalScore: activeChallenge.questions.length,
+        xpGained, 
+        codeBlocksGained 
+      });
 
-  const renderScreen = () => {
-    switch (gameState.currentScreen) {
-      case 'quiz':
-        if (activeChallenge) {
-          return <QuizView challenge={activeChallenge} onComplete={endChallenge} onUseItem={useItem} />;
-        }
-        // Fallback to main menu if no active challenge
-        return <MainMenu onStartChallenge={startChallenge} gameState={gameState} />;
-      case 'main_menu':
-      default:
-        return <MainMenu onStartChallenge={startChallenge} gameState={gameState} />;
+      if (success) {
+        setCompletedChallenges(prev => [...prev, activeChallenge.gateId]);
+        setPlayer(prev => ({
+          ...prev,
+          xp: prev.xp + xpGained,
+          codeBlocks: prev.codeBlocks + codeBlocksGained,
+        }));
+      }
+      setActiveChallenge(null);
+      setIsFeedbackModalOpen(true);
     }
   };
+
+  const handleCloseFeedbackModal = () => {
+    setIsFeedbackModalOpen(false);
+    setLastQuizResult(null);
+  };
+
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve((reader.result as string).split(',')[1]);
+      reader.onerror = error => reject(error);
+    });
+  };
+
+  const handleFileUpload = async (file: File) => {
+    if (!file) return;
+    setIsGenerating(true);
+    setGenerationError(null);
+    setCustomZone(null);
+
+    try {
+      const base64Data = await fileToBase64(file);
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+
+      const questionSchema = {
+        type: Type.OBJECT,
+        properties: {
+          id: { type: Type.STRING },
+          type: { type: Type.STRING, enum: ['multiple-choice']},
+          text: { type: Type.STRING },
+          options: { type: Type.ARRAY, items: { type: Type.STRING } },
+          correctOptionIndex: { type: Type.INTEGER },
+          explanation: { type: Type.STRING },
+          xp: { type: Type.INTEGER },
+        }
+      };
+
+      const prompt = `Dựa vào nội dung của tài liệu được cung cấp, hãy tạo ra 5 câu hỏi trắc nghiệm khách quan (chỉ có một đáp án đúng duy nhất). Các câu hỏi phải liên quan trực tiếp và chỉ dựa vào nội dung trong tài liệu. Không được bịa đặt thông tin. Mỗi câu hỏi phải có 4 lựa chọn. Cung cấp câu trả lời theo cấu trúc JSON đã định sẵn.`;
+
+      const response: GenerateContentResponse = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: {
+          parts: [
+            { text: prompt },
+            {
+              inlineData: {
+                mimeType: file.type,
+                data: base64Data,
+              },
+            },
+          ],
+        },
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.ARRAY,
+            items: questionSchema,
+          },
+        },
+      });
+
+      const generatedQuestions: Question[] = JSON.parse(response.text);
+
+      if (!generatedQuestions || generatedQuestions.length === 0) {
+        throw new Error("AI không thể tạo câu hỏi từ tài liệu này.");
+      }
+      
+      const newZone: Zone = {
+        id: 'zone-custom',
+        name: `Vùng Dữ Liệu Tùy Chỉnh: ${file.name}`,
+        description: 'Một vùng dữ liệu được tạo ra từ tài liệu bạn đã tải lên.',
+        gates: [
+          {
+            id: 'gate-custom-1',
+            name: 'Cổng Thử Thách Tùy Chỉnh',
+            type: 'medium',
+            questions: generatedQuestions,
+          },
+        ],
+      };
+      setCustomZone(newZone);
+
+    } catch (error) {
+      console.error("Lỗi khi tạo câu hỏi:", error);
+      setGenerationError("Không thể tạo câu hỏi từ tài liệu này. Vui lòng thử lại với một tệp khác hoặc kiểm tra định dạng tệp.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const allZones = customZone ? [...ZONES, customZone] : ZONES;
 
   return (
-    <div className="min-h-screen bg-gray-900 text-green-400 p-4 flex flex-col items-center justify-center relative overflow-hidden">
-      <div className="absolute inset-0 bg-black opacity-50 z-0"></div>
-      <div className="absolute inset-0 bg-repeat bg-[length:40px_40px]" style={{backgroundImage: 'linear-gradient(rgba(0,255,65,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,255,65,0.1) 1px, transparent 1px)'}}></div>
-      <div className="w-full max-w-7xl mx-auto p-2 sm:p-4 z-10">
-        <header className="mb-4">
-          <h1 className="text-3xl md:text-5xl font-bold text-center uppercase tracking-widest" style={{ textShadow: '0 0 10px #00ff41, 0 0 20px #00ff41, 0 0 30px #00ff41' }}>
-            Hành Trình Kiến Tạo Mạng
-          </h1>
-          <Hud player={gameState.player} levelData={ZONES_DATA.levels[gameState.player.level - 1]} />
-        </header>
-        <main className="cyber-border cyber-glow bg-black bg-opacity-70 p-4 md:p-6 rounded-lg backdrop-blur-sm">
-          {renderScreen()}
-        </main>
-      </div>
+    <div className="bg-gray-900 text-white min-h-screen font-sans">
+      <Hud player={player} levels={LEVELS} userRole={userRole} onToggleRole={toggleUserRole} />
+      <main className="container mx-auto p-4 md:p-8">
+        {!activeChallenge ? (
+          <MainMenu 
+            zones={allZones} 
+            onStartChallenge={handleStartChallenge}
+            completedChallenges={completedChallenges}
+            playerLevel={player.level}
+            onFileUpload={handleFileUpload}
+            isGenerating={isGenerating}
+            generationError={generationError}
+            userRole={userRole}
+          />
+        ) : (
+          <QuizView 
+            challenge={activeChallenge}
+            onComplete={handleQuizComplete}
+            onBack={handleBackToMenu}
+          />
+        )}
+      </main>
+      {lastQuizResult && (
+        <FeedbackModal 
+          isOpen={isFeedbackModalOpen}
+          onClose={handleCloseFeedbackModal}
+          success={lastQuizResult.success}
+          score={lastQuizResult.score}
+          totalScore={lastQuizResult.totalScore}
+          xpGained={lastQuizResult.xpGained}
+          codeBlocksGained={lastQuizResult.codeBlocksGained}
+        />
+      )}
+      <footer className="text-center p-4 text-gray-500 text-xs">
+        <p>Gemini API Edutainment Demo</p>
+      </footer>
     </div>
   );
 };
